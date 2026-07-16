@@ -1,0 +1,14 @@
+{
+  "name": "threads-scraper",
+  "version": "1.0.0",
+  "description": "An elegant web scraper for public Threads profiles.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "playwright-core": "^1.45.1"
+  }
+}

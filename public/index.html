@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- SEO Meta Tags -->
+    <title>Threads 貼文內容智能爬蟲工具 - 極簡美學數據分析</title>
+    <meta name="description" content="輸入公開 Threads 帳號，一鍵擷取其貼文、互動數據（按讚數、回覆數）、發布時間與媒體內容（圖片、影片），支援資料排序、前端關鍵字篩選及 CSV/JSON 格式導出。">
+    <meta name="keywords" content="Threads, 爬蟲, 網頁爬蟲, 數據分析, 貼文擷取, 導出 CSV, Threads Scraper">
+    <meta name="author" content="Antigravity">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Threads 貼文內容智能爬蟲工具">
+    <meta property="og:description" content="快速擷取公開 Threads 帳號的歷史串文、多媒體內容與社群數據。">
+    <meta property="og:type" content="website">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="app-container">
+        
+        <!-- Header Section -->
+        <header class="app-header">
+            <div class="logo-area">
+                <div class="logo-icon-container">
+                    <i data-lucide="instagram" class="logo-icon-bg"></i>
+                    <i data-lucide="rss" class="logo-icon"></i>
+                </div>
+                <h1 class="logo-text">Threads <span>Scraper</span></h1>
+            </div>
+            <p class="subtitle-text">極簡社群數據擷取與分析工具。輸入公開帳號即可爬取最新貼文與多媒體內容。</p>
+        </header>
+        
+        <!-- Input & Search Section -->
+        <section class="search-section">
+            <div class="glass-card search-card">
+                <form id="scrape-form" class="search-form">
+                    <div class="input-wrapper">
+                        <span class="prefix-at">@</span>
+                        <input 
+                            type="text" 
+                            id="username-input" 
+                            placeholder="輸入 Threads 帳號 (例如: zuck)" 
+                            required 
+                            autocomplete="off"
+                            spellcheck="false"
+                        >
+                        <button type="submit" id="submit-btn" class="glow-button">
+                            <span class="btn-text">開始爬取</span>
+                            <i data-lucide="arrow-right" class="btn-icon"></i>
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Quick Suggestions -->
+                <div class="suggestions">
+                    <span class="suggestion-label">熱門推薦：</span>
+                    <button class="suggestion-tag" data-username="zuck">@zuck (Mark Zuckerberg)</button>
+                    <button class="suggestion-tag" data-username="taylorswift">@taylorswift (Taylor Swift)</button>
+                    <button class="suggestion-tag" data-username="mosseri">@mosseri (Adam Mosseri)</button>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Dashboard & Results Container -->
+        <main id="main-content" class="results-container hidden">
+            
+            <!-- Sidebar: User Info & Export -->
+            <aside class="sidebar-area">
+                <!-- User Profile Glass Card -->
+                <div class="glass-card profile-card">
+                    <div class="profile-header">
+                        <div class="avatar-container">
+                            <img id="user-avatar" src="" alt="User Avatar" class="profile-avatar">
+                            <div class="avatar-ring"></div>
+                        </div>
+                        <div class="user-titles">
+                            <h2 id="user-fullname" class="user-fullname"></h2>
+                            <p id="user-username-display" class="user-handle"></p>
+                        </div>
+                    </div>
+                    
+                    <p id="user-bio" class="user-bio"></p>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <i data-lucide="users" class="stat-icon"></i>
+                            <div class="stat-details">
+                                <span id="user-followers" class="stat-value">-</span>
+                                <span class="stat-label">粉絲數</span>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <i data-lucide="message-circle" class="stat-icon"></i>
+                            <div class="stat-details">
+                                <span id="user-threads-count" class="stat-value">-</span>
+                                <span class="stat-label">串文數</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <a id="user-link" href="" target="_blank" class="profile-link-btn">
+                        <span>開啟 Threads 個人檔案</span>
+                        <i data-lucide="external-link"></i>
+                    </a>
+                </div>
+                
+                <!-- Data Control Card -->
+                <div class="glass-card control-card">
+                    <h3 class="card-title"><i data-lucide="sliders" class="title-icon"></i>資料控制台</h3>
+                    
+                    <!-- Search Filter -->
+                    <div class="control-group">
+                        <label for="filter-input">篩選內容關鍵字</label>
+                        <div class="control-input-wrapper">
+                            <i data-lucide="search" class="input-icon"></i>
+                            <input type="text" id="filter-input" placeholder="在爬取的貼文中搜尋...">
+                        </div>
+                    </div>
+                    
+                    <!-- Sort Filter -->
+                    <div class="control-group">
+                        <label for="sort-select">資料排序</label>
+                        <div class="control-input-wrapper">
+                            <i data-lucide="sort-asc" class="input-icon"></i>
+                            <select id="sort-select">
+                                <option value="newest">發布時間: 由新到舊</option>
+                                <option value="oldest">發布時間: 由舊到新</option>
+                                <option value="likes">按讚數量: 由高到低</option>
+                                <option value="replies">回覆數量: 由高到低</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Export Options -->
+                    <div class="control-group">
+                        <label>資料匯出</label>
+                        <div class="export-buttons-grid">
+                            <button id="export-csv-btn" class="export-btn csv-style">
+                                <i data-lucide="file-spreadsheet"></i>
+                                <span>匯出 CSV</span>
+                            </button>
+                            <button id="export-json-btn" class="export-btn json-style">
+                                <i data-lucide="braces"></i>
+                                <span>匯出 JSON</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+            
+            <!-- Feed Area -->
+            <section class="feed-area">
+                <div class="feed-header">
+                    <h3 class="feed-title">爬取結果 (<span id="posts-count">0</span> 條貼文流)</h3>
+                    <div class="feed-stats-summary">
+                        <span id="total-likes-badge" class="stats-badge"><i data-lucide="heart"></i> <span class="val">0</span></span>
+                    </div>
+                </div>
+                
+                <!-- Posts Feed Container -->
+                <div id="posts-feed" class="posts-feed">
+                    <!-- Dynamic Post Cards go here -->
+                </div>
+            </section>
+            
+        </main>
+        
+        <!-- Loading State Skeleton Card -->
+        <section id="loading-state" class="loading-container hidden">
+            <div class="loading-box">
+                <div class="loader-ripple">
+                    <div></div>
+                    <div></div>
+                </div>
+                <h3 class="loading-title">正在爬取 Threads 數據中</h3>
+                <p id="loading-subtitle" class="loading-subtitle">啟動後端無頭瀏覽器載入頁面...</p>
+                <div class="loading-progress-bar">
+                    <div class="progress-bar-fill"></div>
+                </div>
+            </div>
+            
+            <!-- Skeleton layout preview -->
+            <div class="skeleton-layout">
+                <div class="skeleton-sidebar">
+                    <div class="skeleton-card skeleton-profile"></div>
+                    <div class="skeleton-card skeleton-controls"></div>
+                </div>
+                <div class="skeleton-feed">
+                    <div class="skeleton-card skeleton-post"></div>
+                    <div class="skeleton-card skeleton-post"></div>
+                    <div class="skeleton-card skeleton-post"></div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Welcome Screen (Initial view) -->
+        <section id="welcome-screen" class="welcome-container">
+            <div class="glass-card welcome-card">
+                <div class="welcome-decor">
+                    <i data-lucide="database" class="decor-icon-db"></i>
+                    <div class="decor-line"></div>
+                    <i data-lucide="chrome" class="decor-icon-browser"></i>
+                </div>
+                <h2>準備好開始了嗎？</h2>
+                <p>本爬蟲採用全自動動態頁面渲染與 API 攔截技術。請在上方輸入 Threads 帳號以獲取資料。</p>
+                <div class="features-grid">
+                    <div class="feat-item">
+                        <i data-lucide="shield-check"></i>
+                        <h4>安全免登入</h4>
+                        <p>無需提供您的 Threads 帳號密碼，安全無虞。</p>
+                    </div>
+                    <div class="feat-item">
+                        <i data-lucide="image"></i>
+                        <h4>完整媒體擷取</h4>
+                        <p>支援照片、影片、Carousel 幻燈片等多媒體提取。</p>
+                    </div>
+                    <div class="feat-item">
+                        <i data-lucide="download"></i>
+                        <h4>一鍵快速匯出</h4>
+                        <p>輕鬆將串文資料轉換成 CSV 或 JSON 備份檔。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+    </div>
+
+    <!-- Image Lightbox Modal -->
+    <div id="lightbox-modal" class="lightbox-modal hidden">
+        <span class="close-lightbox">&times;</span>
+        <img class="lightbox-content" id="lightbox-img" alt="Enlarged view">
+        <div id="lightbox-caption" class="lightbox-caption"></div>
+    </div>
+    
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>
