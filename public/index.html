@@ -157,6 +157,24 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Excel Sync Card -->
+                <div class="glass-card control-card sync-card" style="margin-top: 20px; border-color: rgba(16, 185, 129, 0.25);">
+                    <h3 class="card-title" style="color: var(--success);"><i data-lucide="refresh-cw" class="title-icon"></i>水果市場評論 Excel 同步</h3>
+                    <p class="sync-desc" style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 15px;">將 @abc89151207 帳號最新發布的貼文，一鍵增量同步至本機 Excel 檔案中。</p>
+                    <button id="sync-excel-btn" class="glow-button-green">
+                        <i data-lucide="file-spreadsheet"></i>
+                        <span>一鍵同步到 Excel</span>
+                    </button>
+                    <div id="sync-status-area" class="sync-status-area hidden" style="margin-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: 15px;">
+                        <div id="sync-status-badge" class="sync-status-badge"></div>
+                        <div id="sync-stats-info" class="sync-stats-info" style="margin-top: 8px; font-size: 0.9rem;"></div>
+                        <div class="logs-container" style="margin-top: 12px;">
+                            <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">執行日誌：</label>
+                            <pre id="sync-logs-display" style="background: rgba(0, 0, 0, 0.4); padding: 8px; border-radius: 8px; font-size: 0.75rem; color: #a7f3d0; max-height: 150px; overflow-y: auto; font-family: monospace; border: 1px solid rgba(16, 185, 129, 0.1);"></pre>
+                        </div>
+                    </div>
+                </div>
             </aside>
             
             <!-- Feed Area -->

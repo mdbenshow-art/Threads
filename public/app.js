@@ -32,6 +32,13 @@ const postsCount = document.getElementById('posts-count');
 const totalLikesBadge = document.getElementById('total-likes-badge');
 const postsFeed = document.getElementById('posts-feed');
 
+// Excel Sync Elements
+const syncExcelBtn = document.getElementById('sync-excel-btn');
+const syncStatusArea = document.getElementById('sync-status-area');
+const syncStatusBadge = document.getElementById('sync-status-badge');
+const syncStatsInfo = document.getElementById('sync-stats-info');
+const syncLogsDisplay = document.getElementById('sync-logs-display');
+
 // Lightbox Elements
 const lightboxModal = document.getElementById('lightbox-modal');
 const lightboxImg = document.getElementById('lightbox-img');
@@ -73,6 +80,57 @@ sortSelect.addEventListener('change', applyFiltersAndSort);
 
 exportJsonBtn.addEventListener('click', exportJSON);
 exportCsvBtn.addEventListener('click', exportCSV);
+
+if (syncExcelBtn) {
+    syncExcelBtn.addEventListener('click', runExcelSync);
+}
+
+async function runExcelSync() {
+    syncExcelBtn.disabled = true;
+    syncStatusArea.classList.remove('hidden');
+    
+    syncStatusBadge.className = 'sync-status-badge syncing';
+    syncStatusBadge.innerHTML = '<i data-lucide="loader" style="animation: spin 1s linear infinite; display: inline-block; width: 14px; height: 14px; margin-right: 4px; vertical-align: middle;"></i><span>同步中...</span>';
+    syncStatsInfo.innerText = '啟動 Playwright 爬取目標帳號最新資料，並更新本機 Excel 檔案...';
+    syncLogsDisplay.innerText = '正在初始化同步...';
+    lucide.createIcons();
+    
+    try {
+        const response = await fetch('/api/sync-excel');
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            syncStatusBadge.className = 'sync-status-badge success';
+            syncStatusBadge.innerHTML = '<i data-lucide="check" style="display: inline-block; width: 14px; height: 14px; margin-right: 4px; vertical-align: middle;"></i><span>同步成功</span>';
+            
+            let statsText = '';
+            if (result.excelLocked) {
+                statsText = '⚠️ 雖然爬取成功，但 Excel 檔案目前被開啟，請關閉檔案後再試一次！';
+                syncStatusBadge.className = 'sync-status-badge error';
+                syncStatusBadge.innerHTML = '<i data-lucide="alert-triangle" style="display: inline-block; width: 14px; height: 14px; margin-right: 4px; vertical-align: middle;"></i><span>同步失敗</span>';
+                showToast('同步失敗：Excel 檔案可能被開啟鎖定！', 'error');
+            } else {
+                statsText = `新增貼文：${result.appendedCount} 篇 | 跳過重複：${result.skippedCount} 篇`;
+                showToast(`Excel 同步成功！新增 ${result.appendedCount} 筆資料。`, 'success');
+            }
+            
+            syncStatsInfo.innerText = statsText;
+            syncLogsDisplay.innerText = result.stdout || '同步成功完成。';
+            
+        } else {
+            throw new Error(result.error || '同步過程中發生錯誤');
+        }
+    } catch (err) {
+        syncStatusBadge.className = 'sync-status-badge error';
+        syncStatusBadge.innerHTML = '<i data-lucide="x" style="display: inline-block; width: 14px; height: 14px; margin-right: 4px; vertical-align: middle;"></i><span>同步失敗</span>';
+        syncStatsInfo.innerText = err.message;
+        syncLogsDisplay.innerText = err.message || '無日誌';
+        showToast(err.message, 'error');
+    } finally {
+        syncExcelBtn.disabled = false;
+        lucide.createIcons();
+    }
+}
 
 // Lightbox events
 closeLightbox.addEventListener('click', closeLightboxView);
