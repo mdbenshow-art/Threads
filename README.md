@@ -2,6 +2,7 @@
 
 這是一個基於 **Node.js (Express + Playwright)** 與 **Python (openpyxl)** 開發的 Threads 數據爬蟲與分析平台。專門用於爬取 Threads 上的貼文、子串文、其他使用者的留言與回覆，並支援將資料以符合特定格式的 Excel 檔案匯出，非常適合產銷行情分析與社群討論監測。
 
+DIMO: https://mdbenshow-art.github.io/Threads/
 ---
 
 ## 🚀 功能特點
