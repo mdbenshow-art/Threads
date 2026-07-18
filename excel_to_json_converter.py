@@ -9,6 +9,7 @@ def main():
     excel_path = os.path.join(current_dir, "水果市場評論貼文_匯入進度.xlsx")
     json_output_path = os.path.join(current_dir, "水果市場評論貼文_匯入進度.json")
     html_output_path = os.path.join(current_dir, "水果市場評論貼文_瀏覽.html")
+    index_output_path = os.path.join(current_dir, "index.html")
     
     if not os.path.exists(excel_path):
         print(f"錯誤：找不到 Excel 檔案 {excel_path}")
@@ -65,6 +66,11 @@ def main():
         print(f"正在生成瀏覽網頁：{html_output_path}...")
         html_content = generate_html(posts)
         with open(html_output_path, 'w', encoding='utf-8') as f:
+            f.write(html_content)
+            
+        # Write to index.html for GitHub Pages hosting
+        print(f"正在生成 GitHub Pages 首頁：{index_output_path}...")
+        with open(index_output_path, 'w', encoding='utf-8') as f:
             f.write(html_content)
             
         print("轉換成功！您現在可以直接雙擊開啟 '水果市場評論貼文_瀏覽.html' 進行閱讀。")
