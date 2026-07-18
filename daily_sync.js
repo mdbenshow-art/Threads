@@ -137,8 +137,8 @@ function logMessage(message, isError = false) {
 
   logMessage(`Found ${threadCodes.length} recent thread codes: ${threadCodes.join(', ')}`);
   
-  // We will process the latest 3 threads for sync
-  const targetCodes = threadCodes.slice(0, 3);
+  // We will process the latest 10 threads for sync
+  const targetCodes = threadCodes.slice(0, 10);
   logMessage(`Processing latest ${targetCodes.length} threads for detailed crawl: ${targetCodes.join(', ')}`);
 
   const crawledPosts = [];

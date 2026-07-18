@@ -31,7 +31,10 @@
 │   └── app.js              # 前端控制邏輯與 API 互動
 ├── server.js               # 後端 Express 伺服器與 Playwright 爬蟲核心
 ├── package.json            # Node.js 依賴配置文件
+├── excel_to_json_converter.py # 獨立的 Excel 轉 JSON & HTML 工具
 ├── 水果市場評論貼文_匯入進度.xlsx # 產出之分析 Excel 檔案
+├── 水果市場評論貼文_匯入進度.json # 轉換出的實體 JSON 資料檔
+├── 水果市場評論貼文_瀏覽.html     # 純離線、可雙擊打開的卡片式數據瀏覽網頁
 └── README.md               # 本說明文件
 ```
 
@@ -83,3 +86,47 @@ npm start
 ### B. 追加寫入 Excel 匯入進度
 系統在執行爬取單篇討論串時，會產生最新的數據，並可呼叫後端 Python 腳本將新留言追加至 `水果市場評論貼文_匯入進度.xlsx` 中。
 * **注意**：在執行寫入動作前，請確保您的 **Microsoft Excel 已關閉該檔案**，以免因系統檔案鎖定導致寫入權限出錯。
+
+---
+
+## 🔄 每日自動排程爬蟲 (Daily Scheduled Sync)
+
+專案包含排程腳本 `daily_sync.js` 與 `run_daily.bat`，可透過 **Windows 工作排程器 (Task Scheduler)** 實現每日早上 6:00 自動執行爬蟲。
+
+### 1. 工作原理
+- **自動排程** 每日 6:00 AM 啟動。
+- 透過 [daily_sync.js](file:///c:/Users/User/Desktop/Threads/daily_sync.js) 自動爬取帳號 `@abc89151207` 的最新 10 篇貼文。
+- 呼叫 [update_excel.py](file:///c:/Users/User/Desktop/Threads/update_excel.py) 解析並自動追加新貼文到 [水果市場評論貼文_匯入進度.xlsx](file:///c:/Users/User/Desktop/Threads/水果市場評論貼文_匯入進度.xlsx)。
+- 自動過濾重複的貼文，並將進度與錯誤記錄寫入 [sync_log.txt](file:///c:/Users/User/Desktop/Threads/sync_log.txt)。
+
+### 2. 工作排程器設定指令
+我們已成功在系統中註冊名稱為 `ThreadsDailySync` 的排程工作。以下為常用的管理指令（於 PowerShell 中執行）：
+
+- **手動啟動排程測試**：
+  ```powershell
+  Start-ScheduledTask -TaskName "ThreadsDailySync"
+  ```
+- **查詢排程狀態與下次執行時間**：
+  ```powershell
+  Get-ScheduledTaskInfo -TaskName "ThreadsDailySync"
+  ```
+- **刪除排程工作**：
+  ```powershell
+  Unregister-ScheduledTask -TaskName "ThreadsDailySync" -Confirm:$false
+  ```
+
+---
+
+## 💾 3. Excel 轉 JSON 與靜態網頁瀏覽工具
+
+如果您想將爬蟲同步進來的 Excel 檔案轉換為實體 JSON 數據並在離線網頁中瀏覽，專案提供了一個獨立的 Python 腳本 [excel_to_json_converter.py](file:///c:/Users/User/Desktop/Threads/excel_to_json_converter.py)。
+
+### A. 使用方法
+在專案根目錄下，開啟終端機/PowerShell 執行：
+```powershell
+python excel_to_json_converter.py
+```
+
+### B. 輸出產物
+1. **[水果市場評論貼文_匯入進度.json](file:///c:/Users/User/Desktop/Threads/水果市場評論貼文_匯入進度.json)**：Excel 欄位轉換後的純 JSON 陣列檔案。
+2. **[水果市場評論貼文_瀏覽.html](file:///c:/Users/User/Desktop/Threads/水果市場評論貼文_瀏覽.html)**：完全獨立的靜態網頁。您可以**直接雙擊開啟它**，不需運行後端伺服器，即可在瀏覽器中讀取該 JSON 數據，並進行即時關鍵字搜尋、日期排序與段落折疊展開。
