@@ -88,17 +88,21 @@ def generate_html(posts_data):
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>水果市場評論貼文 - 數據瀏覽器</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {{
-            --bg-color: #f8fafc;
-            --card-bg: #ffffff;
-            --card-border: #e2e8f0;
-            --accent: #4f46e5;
-            --accent-glow: rgba(79, 70, 229, 0.1);
-            --success: #15803d;
-            --text-primary: #0f172a;
-            --text-secondary: #475569;
-            --text-muted: #64748b;
+            --bg-color: #0d0f12;
+            --card-bg: rgba(22, 28, 36, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --accent: #8b5cf6;
+            --accent-glow: rgba(139, 92, 246, 0.3);
+            --success: #10b981;
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
         }}
         
         * {{
@@ -110,13 +114,17 @@ def generate_html(posts_data):
         body {{
             background-color: var(--bg-color);
             color: var(--text-primary);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: 'Inter', -apple-system, sans-serif;
             line-height: 1.6;
             padding: 40px 20px;
+            background-image: 
+                radial-gradient(at 10% 20%, rgba(139, 92, 246, 0.05) 0px, transparent 50%),
+                radial-gradient(at 90% 80%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
+            background-attachment: fixed;
         }}
         
         .container {{
-            max-width: 900px;
+            max-width: 1000px;
             margin: 0 auto;
             display: flex;
             flex-direction: column;
@@ -129,9 +137,12 @@ def generate_html(posts_data):
         }}
         
         h1 {{
-            font-size: 2rem;
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.2rem;
             font-weight: 700;
-            color: #0f172a;
+            background: linear-gradient(to right, #fff, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             margin-bottom: 8px;
         }}
         
@@ -146,7 +157,7 @@ def generate_html(posts_data):
             border: 1px solid var(--card-border);
             border-radius: 12px;
             padding: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            backdrop-filter: blur(10px);
             display: flex;
             gap: 16px;
             align-items: center;
@@ -161,8 +172,8 @@ def generate_html(posts_data):
         
         .search-input {{
             width: 100%;
-            background: #ffffff;
-            border: 1px solid #cbd5e1;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--card-border);
             border-radius: 8px;
             padding: 10px 16px;
             color: var(--text-primary);
@@ -173,12 +184,12 @@ def generate_html(posts_data):
         
         .search-input:focus {{
             border-color: var(--accent);
-            box-shadow: 0 0 0 3px var(--accent-glow);
+            box-shadow: 0 0 10px var(--accent-glow);
         }}
         
         .sort-group select {{
-            background: #ffffff;
-            border: 1px solid #cbd5e1;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--card-border);
             border-radius: 8px;
             padding: 10px 16px;
             color: var(--text-primary);
@@ -188,9 +199,9 @@ def generate_html(posts_data):
         }}
         
         .stats-badge {{
-            background: #f1f5f9;
-            border: 1px solid #e2e8f0;
-            color: var(--text-secondary);
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            color: #c084fc;
             padding: 8px 16px;
             border-radius: 8px;
             font-size: 0.9rem;
@@ -209,7 +220,7 @@ def generate_html(posts_data):
             border: 1px solid var(--card-border);
             border-radius: 12px;
             padding: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            backdrop-filter: blur(10px);
             transition: all 0.3s ease;
             display: flex;
             flex-direction: column;
@@ -217,7 +228,8 @@ def generate_html(posts_data):
         }}
         
         .post-card:hover {{
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border-color: rgba(139, 92, 246, 0.3);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
         }}
         
         .card-header {{
@@ -227,7 +239,7 @@ def generate_html(posts_data):
             flex-wrap: wrap;
             gap: 10px;
             padding-bottom: 10px;
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }}
         
         .author-info {{
@@ -237,12 +249,12 @@ def generate_html(posts_data):
         }}
         
         .author-badge {{
-            background: #f1f5f9;
-            border: 1px solid #cbd5e1;
-            color: var(--text-secondary);
-            font-size: 0.85rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            font-size: 0.8rem;
             font-weight: 600;
-            padding: 4px 10px;
+            padding: 2px 8px;
             border-radius: 6px;
             width: fit-content;
         }}
@@ -253,9 +265,10 @@ def generate_html(posts_data):
         }}
         
         .main-title {{
+            font-family: 'Outfit', sans-serif;
             font-size: 1.1rem;
             font-weight: 600;
-            color: #0f172a;
+            color: #fff;
         }}
         
         .post-content {{
@@ -266,8 +279,8 @@ def generate_html(posts_data):
         }}
         
         .expand-btn {{
-            background: #f1f5f9;
-            border: 1px solid #e2e8f0;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
             color: var(--text-secondary);
             padding: 8px 16px;
             border-radius: 8px;
@@ -282,14 +295,15 @@ def generate_html(posts_data):
         }}
         
         .expand-btn:hover {{
-            background: #e2e8f0;
-            color: #0f172a;
+            background: rgba(139, 92, 246, 0.1);
+            border-color: var(--accent);
+            color: #fff;
         }}
         
         .full-content-box {{
             margin-top: 10px;
-            background: #f8fafc;
-            border: 1px dashed #cbd5e1;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px dashed rgba(255, 255, 255, 0.06);
             border-radius: 8px;
             padding: 16px;
             font-size: 0.9rem;
