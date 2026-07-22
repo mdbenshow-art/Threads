@@ -88,21 +88,16 @@ def generate_html(posts_data):
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>水果市場評論貼文 - 數據瀏覽器</title>
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {{
-            --bg-color: #0d0f12;
-            --card-bg: rgba(22, 28, 36, 0.7);
-            --card-border: rgba(255, 255, 255, 0.08);
-            --accent: #8b5cf6;
-            --accent-glow: rgba(139, 92, 246, 0.3);
-            --success: #10b981;
-            --text-primary: #f3f4f6;
-            --text-secondary: #9ca3af;
-            --text-muted: #6b7280;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --accent: #4f46e5;
+            --accent-glow: rgba(79, 70, 229, 0.1);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
         }}
         
         * {{
@@ -114,17 +109,13 @@ def generate_html(posts_data):
         body {{
             background-color: var(--bg-color);
             color: var(--text-primary);
-            font-family: 'Inter', -apple-system, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             line-height: 1.6;
             padding: 40px 20px;
-            background-image: 
-                radial-gradient(at 10% 20%, rgba(139, 92, 246, 0.05) 0px, transparent 50%),
-                radial-gradient(at 90% 80%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
-            background-attachment: fixed;
         }}
         
         .container {{
-            max-width: 1000px;
+            max-width: 1100px;
             margin: 0 auto;
             display: flex;
             flex-direction: column;
@@ -137,12 +128,9 @@ def generate_html(posts_data):
         }}
         
         h1 {{
-            font-family: 'Outfit', sans-serif;
-            font-size: 2.2rem;
+            font-size: 2rem;
             font-weight: 700;
-            background: linear-gradient(to right, #fff, #c084fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #0f172a;
             margin-bottom: 8px;
         }}
         
@@ -154,10 +142,10 @@ def generate_html(posts_data):
         /* Controls */
         .controls-card {{
             background: var(--card-bg);
-            border: 1px solid var(--card-border);
+            border: 1px solid var(--border-color);
             border-radius: 12px;
             padding: 20px;
-            backdrop-filter: blur(10px);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             display: flex;
             gap: 16px;
             align-items: center;
@@ -167,29 +155,27 @@ def generate_html(posts_data):
         .search-group {{
             flex: 1;
             min-width: 250px;
-            position: relative;
         }}
         
         .search-input {{
             width: 100%;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--card-border);
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
             border-radius: 8px;
             padding: 10px 16px;
             color: var(--text-primary);
             font-size: 0.9rem;
             outline: none;
-            transition: all 0.3s ease;
         }}
         
         .search-input:focus {{
             border-color: var(--accent);
-            box-shadow: 0 0 10px var(--accent-glow);
+            box-shadow: 0 0 0 3px var(--accent-glow);
         }}
         
         .sort-group select {{
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--card-border);
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
             border-radius: 8px;
             padding: 10px 16px;
             color: var(--text-primary);
@@ -199,114 +185,91 @@ def generate_html(posts_data):
         }}
         
         .stats-badge {{
-            background: rgba(139, 92, 246, 0.1);
-            border: 1px solid rgba(139, 92, 246, 0.2);
-            color: #c084fc;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            color: var(--text-secondary);
             padding: 8px 16px;
             border-radius: 8px;
             font-size: 0.9rem;
             font-weight: 600;
         }}
         
-        /* Feed */
-        .feed {{
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }}
-        
-        .post-card {{
+        /* Table layout */
+        .table-container {{
             background: var(--card-bg);
-            border: 1px solid var(--card-border);
+            border: 1px solid var(--border-color);
             border-radius: 12px;
-            padding: 20px;
-            backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }}
         
-        .post-card:hover {{
-            border-color: rgba(139, 92, 246, 0.3);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        table {{
+            width: 100%;
+            border-collapse: collapse;
         }}
         
-        .card-header {{
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            flex-wrap: wrap;
-            gap: 10px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        th, td {{
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.95rem;
         }}
         
-        .author-info {{
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
+        th {{
+            background-color: #f8fafc;
+            font-weight: 600;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--border-color);
+        }}
+        
+        tr.data-row:hover td {{
+            background-color: #f8fafc;
         }}
         
         .author-badge {{
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            color: var(--success);
-            font-size: 0.8rem;
-            font-weight: 600;
-            padding: 2px 8px;
-            border-radius: 6px;
-            width: fit-content;
+            font-weight: 500;
+            color: var(--accent);
         }}
         
-        .date-label {{
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }}
-        
-        .main-title {{
-            font-family: 'Outfit', sans-serif;
-            font-size: 1.1rem;
+        .post-title {{
             font-weight: 600;
-            color: #fff;
+            color: var(--text-primary);
         }}
         
         .post-content {{
-            font-size: 0.95rem;
-            color: var(--text-primary);
+            color: var(--text-secondary);
             white-space: pre-wrap;
             word-break: break-word;
+            font-size: 0.9rem;
         }}
         
         .expand-btn {{
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
             color: var(--text-secondary);
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 0.85rem;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
             cursor: pointer;
-            width: fit-content;
-            margin-top: 4px;
-            transition: all 0.2s ease;
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
+            margin-top: 6px;
+            outline: none;
         }}
         
         .expand-btn:hover {{
-            background: rgba(139, 92, 246, 0.1);
-            border-color: var(--accent);
-            color: #fff;
+            background: #e2e8f0;
+            color: var(--text-primary);
         }}
         
         .full-content-box {{
             margin-top: 10px;
-            background: rgba(0, 0, 0, 0.25);
-            border: 1px dashed rgba(255, 255, 255, 0.06);
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
             border-radius: 8px;
-            padding: 16px;
-            font-size: 0.9rem;
+            padding: 12px;
+            font-size: 0.85rem;
             color: var(--text-primary);
             white-space: pre-wrap;
         }}
@@ -318,9 +281,6 @@ def generate_html(posts_data):
         .empty-feed {{
             text-align: center;
             padding: 40px;
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 12px;
             color: var(--text-muted);
         }}
     </style>
@@ -334,7 +294,7 @@ def generate_html(posts_data):
         
         <div class="controls-card">
             <div class="search-group">
-                <input type="text" id="search-input" class="search-input" placeholder="搜尋標題、內容或作者...">
+                <input type="text" id="search-input" class="search-input" placeholder="搜尋日期、標題、作者或內容...">
             </div>
             
             <div class="sort-group">
@@ -350,7 +310,22 @@ def generate_html(posts_data):
             </div>
         </div>
         
-        <div id="feed" class="feed"></div>
+        <div class="table-container">
+            <table id="posts-table">
+                <thead>
+                    <tr>
+                        <th style="width: 120px;">發布日期</th>
+                        <th style="width: 150px;">作者</th>
+                        <th style="width: 220px;">貼文標題</th>
+                        <th>貼文內容</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body"></tbody>
+            </table>
+            <div id="empty-state" class="empty-feed hidden">
+                沒有找到符合條件的貼文紀錄。
+            </div>
+        </div>
     </div>
 
     <script>
@@ -359,7 +334,8 @@ def generate_html(posts_data):
         const searchInput = document.getElementById('search-input');
         const sortSelect = document.getElementById('sort-select');
         const postsCount = document.getElementById('posts-count');
-        const feed = document.getElementById('feed');
+        const tableBody = document.getElementById('table-body');
+        const emptyState = document.getElementById('empty-state');
 
         // Initial load
         applyFiltersAndSort();
@@ -397,45 +373,45 @@ def generate_html(posts_data):
             }});
             
             postsCount.innerText = filtered.length;
-            renderFeed(filtered);
+            renderTable(filtered);
         }}
 
-        function renderFeed(posts) {{
-            feed.innerHTML = '';
+        function renderTable(posts) {{
+            tableBody.innerHTML = '';
             
             if (posts.length === 0) {{
-                feed.innerHTML = `
-                    <div class="empty-feed">
-                        <p>沒有找到符合條件的貼文紀錄。</p>
-                    </div>
-                `;
+                emptyState.classList.remove('hidden');
+                document.getElementById('posts-table').classList.add('hidden');
                 return;
             }}
             
+            emptyState.classList.add('hidden');
+            document.getElementById('posts-table').classList.remove('hidden');
+            
             posts.forEach((post, idx) => {{
-                const card = document.createElement('div');
-                card.className = 'post-card';
+                const tr = document.createElement('tr');
+                tr.className = 'data-row';
                 
                 const hasFullContent = post.fullContent && post.fullContent.trim() !== post.originalContent.trim();
                 
-                card.innerHTML = `
-                    <div class="card-header">
-                        <div class="author-info">
-                            <span class="author-badge">@${{escapeHtml(post.username)}} (${{escapeHtml(post.authorName)}})</span>
-                            <h4 class="main-title" style="margin-top: 6px;">${{escapeHtml(post.smallTitle)}}</h4>
-                        </div>
-                        <span class="date-label">${{escapeHtml(post.date)}}</span>
-                    </div>
-                    <div class="post-content">${{formatText(post.originalContent)}}</div>
-                    
-                    ${{hasFullContent ? `
-                        <button class="expand-btn" onclick="toggleFullContent(this, ${{idx}})">
-                            <span>展開完整子貼文串 ▼</span>
-                        </button>
-                        <div id="full-box-${{idx}}" class="full-content-box hidden">${{formatText(post.fullContent)}}</div>
-                    ` : ''}}
+                tr.innerHTML = `
+                    <td><strong>${{escapeHtml(post.date)}}</strong></td>
+                    <td>
+                        <span class="author-badge">@${{escapeHtml(post.username)}}</span>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">${{escapeHtml(post.authorName)}}</div>
+                    </td>
+                    <td><div class="post-title">${{escapeHtml(post.smallTitle)}}</div></td>
+                    <td>
+                        <div class="post-content">${{formatText(post.originalContent)}}</div>
+                        ${{hasFullContent ? `
+                            <button class="expand-btn" onclick="toggleFullContent(this, ${{idx}})">
+                                <span>展開完整子貼文串 ▼</span>
+                            </button>
+                            <div id="full-box-${{idx}}" class="full-content-box hidden">${{formatText(post.fullContent)}}</div>
+                        ` : ''}}
+                    </td>
                 `;
-                feed.appendChild(card);
+                tableBody.appendChild(tr);
             }});
         }}
 
