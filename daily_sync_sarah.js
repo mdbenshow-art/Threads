@@ -473,6 +473,13 @@ function generateHtml(postsData) {
   try {
     await page.goto(profileUrl, { waitUntil: 'networkidle', timeout: 40000 });
     await page.waitForTimeout(4000);
+    
+    // Scroll down 3 times to load more historical posts
+    logMessage('Scrolling profile page to load more threads...');
+    for (let i = 0; i < 3; i++) {
+      await page.evaluate(() => window.scrollBy(0, 1000));
+      await page.waitForTimeout(1500);
+    }
   } catch (err) {
     logMessage(`Error navigating to profile page: ${err.message}`, true);
     await browser.close();
@@ -505,7 +512,7 @@ function generateHtml(postsData) {
     process.exit(1);
   }
 
-  // Extract recent thread codes
+  // Extract recent thread codes from embedded JSON
   const threadCodes = [];
   for (const edge of targetEdges) {
     const node = edge.node;
@@ -517,38 +524,112 @@ function generateHtml(postsData) {
     }
   }
 
+  // Also extract thread codes from rendered DOM links (including those loaded via scrolling)
+  const domCodes = await page.evaluate((uname) => {
+    const results = [];
+    document.querySelectorAll('a').forEach(a => {
+      const href = a.getAttribute('href');
+      if (href) {
+        const postPattern = new RegExp(`/[@]?${uname}/post/([^/?#]+)`, 'i');
+        const tPattern = /\/t\/([^/?#]+)/i;
+        const match = href.match(postPattern) || href.match(tPattern);
+        if (match && match[1]) {
+          results.push(match[1]);
+        }
+      }
+    });
+    return results;
+  }, username);
+
+  // Combine and deduplicate codes
+  domCodes.forEach(code => {
+    if (!threadCodes.includes(code)) {
+      threadCodes.push(code);
+    }
+  });
+
   logMessage(`Found ${threadCodes.length} recent thread codes: ${threadCodes.join(', ')}`);
   
-  // Process latest 10 threads
+  // Process threads via dynamic queue to discover original posts
   const targetCodes = threadCodes.slice(0, 10);
-  logMessage(`Processing latest ${targetCodes.length} threads for detailed crawl: ${targetCodes.join(', ')}`);
-
+  const crawledCodes = new Set();
   const crawledPosts = [];
+  const maxThreadsToCrawl = 15;
+  let crawlCount = 0;
+  
+  logMessage(`Processing threads for detailed crawl: ${targetCodes.join(', ')}`);
 
-  // 2. Fetch details for each thread code
-  for (const code of targetCodes) {
+  while (targetCodes.length > 0 && crawlCount < maxThreadsToCrawl) {
+    const code = targetCodes.shift();
+    if (crawledCodes.has(code)) continue;
+    crawledCodes.add(code);
+    crawlCount++;
+    
     logMessage(`----------------------------------------`);
     const postUrl = `https://www.threads.net/t/${code}?hl=zh-tw`;
-    logMessage(`Loading thread details: ${postUrl}`);
+    logMessage(`Loading thread details (${crawlCount}/${maxThreadsToCrawl}): ${postUrl}`);
     
     try {
       await page.goto(postUrl, { waitUntil: 'networkidle', timeout: 40000 });
       await page.waitForTimeout(3000);
       
+      // Extract newly found post codes from links on this page (helps find original root posts)
+      const pageLinks = await page.evaluate((uname) => {
+        const results = [];
+        document.querySelectorAll('a').forEach(a => {
+          const href = a.getAttribute('href');
+          if (href) {
+            const postPattern = new RegExp(`/[@]?${uname}/post/([^/?#]+)`, 'i');
+            const tPattern = /\/t\/([^/?#]+)/i;
+            const match = href.match(postPattern) || href.match(tPattern);
+            if (match && match[1]) {
+              results.push(match[1]);
+            }
+          }
+        });
+        return results;
+      }, username);
+      
+      // Queue newly found codes
+      pageLinks.forEach(newCode => {
+        if (!crawledCodes.has(newCode) && !targetCodes.includes(newCode)) {
+          targetCodes.push(newCode);
+          logMessage(`  -> Discovered referenced thread code in DOM: ${newCode}`);
+        }
+      });
+      
       const html = await page.content();
       const regex = /<script type="application\/json"[^>]*>([\s\S]*?)<\/script>/gi;
       let match;
       let targetObj = null;
+      let maxTextLength = -1;
       
       while ((match = regex.exec(html)) !== null) {
         const content = match[1];
-        if (content.includes(code) && content.includes('thread_items')) {
+        if (content.includes('thread_items')) {
           try {
             const parsed = JSON.parse(content);
             const edges = findEdges(parsed);
             if (edges) {
-              targetObj = edges;
-              break;
+              // Calculate combined text length to select the full text cache over truncated preview
+              let combinedLength = 0;
+              edges.forEach((edge) => {
+                const threadItems = edge.node?.thread_items || [];
+                threadItems.forEach((item) => {
+                  const post = item.post;
+                  if (post && post.user?.username === username) {
+                    const text = post.caption?.text || '';
+                    const snippetText = post.text_post_app_info?.snippet_attachment_info?.text_fragments?.fragments?.[0]?.plaintext;
+                    const finalPostText = (snippetText && snippetText.length > text.length) ? snippetText : text;
+                    combinedLength += finalPostText.length;
+                  }
+                });
+              });
+              
+              if (combinedLength > maxTextLength) {
+                maxTextLength = combinedLength;
+                targetObj = edges;
+              }
             }
           } catch (e) {}
         }
@@ -648,27 +729,41 @@ function generateHtml(postsData) {
     }
   }
 
-  // Merge posts (prevent duplicates)
   let newAppended = 0;
   crawledPosts.forEach((post) => {
-    const isDuplicate = existingPosts.some((existing) => {
-      // Check code matching or content matching
-      if (existing.code === post.code) return true;
+    let duplicateIndex = -1;
+    const isDuplicate = existingPosts.some((existing, idx) => {
+      if (existing.code === post.code) {
+        duplicateIndex = idx;
+        return true;
+      }
       const sliceLength = Math.min(100, post.fullContent.length, existing.fullContent.length);
       if (sliceLength > 0 && post.fullContent.slice(0, sliceLength) === existing.fullContent.slice(0, sliceLength)) {
+        duplicateIndex = idx;
         return true;
       }
       return false;
     });
 
     if (!isDuplicate) {
-      // Clean title emoji
       post.smallTitle = stripEmojis(post.smallTitle);
       existingPosts.push(post);
       newAppended++;
       logMessage(`  -> Added new post: ${post.smallTitle.slice(0, 30)}...`);
     } else {
-      logMessage(`  -> Skipping duplicate post: ${post.smallTitle.slice(0, 30)}...`);
+      const existing = existingPosts[duplicateIndex];
+      const existingHasMore = existing.fullContent.includes('更多') || existing.fullContent.includes('more') || existing.fullContent.includes('…');
+      const newHasNoMore = !post.fullContent.includes('更多') && !post.fullContent.includes('more') && !post.fullContent.includes('…');
+      
+      // If the duplicate has longer content and the existing one was truncated (or new has no truncation markers)
+      if (post.fullContent.length > existing.fullContent.length && (existingHasMore || newHasNoMore)) {
+        logMessage(`  -> Updating duplicate post with longer full text: ${post.smallTitle.slice(0, 30)}...`);
+        post.smallTitle = stripEmojis(post.smallTitle);
+        existingPosts[duplicateIndex] = post;
+        newAppended++;
+      } else {
+        logMessage(`  -> Skipping duplicate post: ${post.smallTitle.slice(0, 30)}...`);
+      }
     }
   });
 

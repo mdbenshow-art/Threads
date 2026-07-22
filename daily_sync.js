@@ -74,6 +74,13 @@ function logMessage(message, isError = false) {
   try {
     await page.goto(profileUrl, { waitUntil: 'networkidle', timeout: 40000 });
     await page.waitForTimeout(4000);
+    
+    // Scroll down 3 times to load more historical posts
+    logMessage('Scrolling profile page to load more threads...');
+    for (let i = 0; i < 3; i++) {
+      await page.evaluate(() => window.scrollBy(0, 1000));
+      await page.waitForTimeout(1500);
+    }
   } catch (err) {
     logMessage(`Error navigating to profile page: ${err.message}`, true);
     await browser.close();
@@ -135,38 +142,112 @@ function logMessage(message, isError = false) {
     }
   }
 
+  // Also extract thread codes from rendered DOM links (including those loaded via scrolling)
+  const domCodes = await page.evaluate((uname) => {
+    const results = [];
+    document.querySelectorAll('a').forEach(a => {
+      const href = a.getAttribute('href');
+      if (href) {
+        const postPattern = new RegExp(`/[@]?${uname}/post/([^/?#]+)`, 'i');
+        const tPattern = /\/t\/([^/?#]+)/i;
+        const match = href.match(postPattern) || href.match(tPattern);
+        if (match && match[1]) {
+          results.push(match[1]);
+        }
+      }
+    });
+    return results;
+  }, username);
+
+  // Combine and deduplicate codes
+  domCodes.forEach(code => {
+    if (!threadCodes.includes(code)) {
+      threadCodes.push(code);
+    }
+  });
+
   logMessage(`Found ${threadCodes.length} recent thread codes: ${threadCodes.join(', ')}`);
   
-  // We will process the latest 10 threads for sync
+  // Process threads via dynamic queue to discover original posts
   const targetCodes = threadCodes.slice(0, 10);
-  logMessage(`Processing latest ${targetCodes.length} threads for detailed crawl: ${targetCodes.join(', ')}`);
-
+  const crawledCodes = new Set();
   const crawledPosts = [];
+  const maxThreadsToCrawl = 15;
+  let crawlCount = 0;
+  
+  logMessage(`Processing threads for detailed crawl: ${targetCodes.join(', ')}`);
 
-  // 2. Fetch details for each thread code
-  for (const code of targetCodes) {
+  while (targetCodes.length > 0 && crawlCount < maxThreadsToCrawl) {
+    const code = targetCodes.shift();
+    if (crawledCodes.has(code)) continue;
+    crawledCodes.add(code);
+    crawlCount++;
+    
     logMessage(`----------------------------------------`);
     const postUrl = `https://www.threads.net/t/${code}?hl=zh-tw`;
-    logMessage(`Loading thread details: ${postUrl}`);
+    logMessage(`Loading thread details (${crawlCount}/${maxThreadsToCrawl}): ${postUrl}`);
     
     try {
       await page.goto(postUrl, { waitUntil: 'networkidle', timeout: 40000 });
       await page.waitForTimeout(3000);
       
+      // Extract newly found post codes from links on this page (helps find original root posts)
+      const pageLinks = await page.evaluate((uname) => {
+        const results = [];
+        document.querySelectorAll('a').forEach(a => {
+          const href = a.getAttribute('href');
+          if (href) {
+            const postPattern = new RegExp(`/[@]?${uname}/post/([^/?#]+)`, 'i');
+            const tPattern = /\/t\/([^/?#]+)/i;
+            const match = href.match(postPattern) || href.match(tPattern);
+            if (match && match[1]) {
+              results.push(match[1]);
+            }
+          }
+        });
+        return results;
+      }, username);
+      
+      // Queue newly found codes
+      pageLinks.forEach(newCode => {
+        if (!crawledCodes.has(newCode) && !targetCodes.includes(newCode)) {
+          targetCodes.push(newCode);
+          logMessage(`  -> Discovered referenced thread code in DOM: ${newCode}`);
+        }
+      });
+      
       const html = await page.content();
       const regex = /<script type="application\/json"[^>]*>([\s\S]*?)<\/script>/gi;
       let match;
       let targetObj = null;
+      let maxTextLength = -1;
       
       while ((match = regex.exec(html)) !== null) {
         const content = match[1];
-        if (content.includes(code) && content.includes('thread_items')) {
+        if (content.includes('thread_items')) {
           try {
             const parsed = JSON.parse(content);
             const edges = findEdges(parsed);
             if (edges) {
-              targetObj = edges;
-              break;
+              // Calculate combined text length to select the full text cache over truncated preview
+              let combinedLength = 0;
+              edges.forEach((edge) => {
+                const threadItems = edge.node?.thread_items || [];
+                threadItems.forEach((item) => {
+                  const post = item.post;
+                  if (post && post.user?.username === username) {
+                    const text = post.caption?.text || '';
+                    const snippetText = post.text_post_app_info?.snippet_attachment_info?.text_fragments?.fragments?.[0]?.plaintext;
+                    const finalPostText = (snippetText && snippetText.length > text.length) ? snippetText : text;
+                    combinedLength += finalPostText.length;
+                  }
+                });
+              });
+              
+              if (combinedLength > maxTextLength) {
+                maxTextLength = combinedLength;
+                targetObj = edges;
+              }
             }
           } catch (e) {}
         }
@@ -182,7 +263,6 @@ function logMessage(message, isError = false) {
         const threadItems = edge.node?.thread_items || [];
         threadItems.forEach((item) => {
           const post = item.post;
-          // Filter to only include posts/replies written by the main author
           if (post && post.user?.username === username) {
             rawPosts.push(post);
           }
@@ -219,9 +299,9 @@ function logMessage(message, isError = false) {
       });
       
       const originalPost = contents[0];
-      const mainTitle = originalPost.title; // 🔊每週評水果市場 7/16-7/19
-      const originalContent = originalPost.text; // Main post content
-      const fullContent = contents.map(c => c.text).join('\n\n'); // Combined content
+      const mainTitle = originalPost.title;
+      const originalContent = originalPost.text;
+      const fullContent = contents.map(c => c.text).join('\n\n');
       
       crawledPosts.push({
         username: username,
