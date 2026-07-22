@@ -17,26 +17,36 @@ DIMO: https://mdbenshow-art.github.io/Threads/
    - **標題 Emoji 清洗**：自動移除標題欄位中的表情符號以維持版面整潔。
    - **時間歸零**：將發布日期對齊至當天零點（00:00:00），以符合分析範本的標準。
    - **防重複機制**：自動比對已存在之全文，避免多次爬取時寫入重複行。
-4. **霓虹暗色調（Dark Neon）Web 介面**：
-   - 使用 Vanilla CSS 打造的精美玻璃擬物化（Glassmorphism）介面與骨架屏（Skeleton Screen）載入動畫。
-   - 支援前端即時關鍵字過濾、按讚數/回覆數/時間排序，以及 CSV/JSON 快速匯出。
+4. **手動一鍵更新流程**：
+   - 提供快捷批次檔，輕按兩下即可自動執行「爬蟲同步 ➡️ 匯入 Excel ➡️ 轉出 JSON 與離線 HTML」，實現真正的零設定一鍵更新。
+5. **離線與線上數據瀏覽器**：
+   - 提供霓虹暗色調（Dark Neon）的精美玻璃擬物化（Glassmorphism）網頁。
+   - 支援離線直接開啟瀏覽（`水果市場評論貼文_瀏覽.html`），也支援發佈至 GitHub Pages 供線上多人瀏覽。
+   - 擁有即時關鍵字篩選、依日期/按讚/回覆排序，以及展開/收折子貼文功能。
 
 ---
 
 ## 📂 專案結構
 
 ```bash
-├── public/                 # 前端網頁目錄
-│   ├── index.html          # Web 應用主頁面
-│   ├── style.css           # 霓虹玻璃擬物化樣式表
-│   └── app.js              # 前端控制邏輯與 API 互動
-├── server.js               # 後端 Express 伺服器與 Playwright 爬蟲核心
-├── package.json            # Node.js 依賴配置文件
-├── excel_to_json_converter.py # 獨立的 Excel 轉 JSON & HTML 工具
-├── 水果市場評論貼文_匯入進度.xlsx # 產出之分析 Excel 檔案
-├── 水果市場評論貼文_匯入進度.json # 轉換出的實體 JSON 資料檔
-├── 水果市場評論貼文_瀏覽.html     # 純離線、可雙擊打開的卡片式數據瀏覽網頁
-└── README.md               # 本說明文件
+├── public/                     # 網頁應用程序前端目錄 (用於本地後端伺服器)
+│   ├── index.html              # 本地 Web 應用主頁面 (動態爬取介面)
+│   ├── style.css               # 霓虹玻璃擬物化樣式表
+│   └── app.js                  # 前端控制邏輯與 API 互動
+├── .venv/                      # Python 虛擬環境 (包含 openpyxl 等套件)
+├── server.js                   # 後端 Express 伺服器與 Playwright 爬蟲核心 API
+├── daily_sync.js               # 爬蟲核心同步腳本 (自動同步最新 10 篇貼文與子串文)
+├── update_excel.py             # Python 腳本：將爬取資料寫入 Excel 並過濾重複
+├── excel_to_json_converter.py  # Python 腳本：讀取 Excel 轉為 JSON 與 HTML 網頁
+├── 手動一鍵更新.bat             # ⚡ Windows 專用：手動雙擊一鍵完成爬蟲與網頁更新
+├── run_daily.bat               # 排程專用：配合 Windows 工作排程器每日自動執行
+├── 水果市場評論貼文_匯入進度.xlsx # 核心數據 Excel 檔案
+├── 水果市場評論貼文_匯入進度.json # 轉換出的結構化 JSON 數據
+├── 水果市場評論貼文_瀏覽.html     # 純離線、可雙擊開啟的卡片式數據瀏覽網頁
+├── index.html                  # 專案首頁 (與 水果市場評論貼文_瀏覽.html 同步，供 GitHub Pages 使用)
+├── sync_log.txt                # 爬蟲與更新的執行日誌檔
+├── package.json                # Node.js 專案配置文件
+└── README.md                   # 本說明文件
 ```
 
 ---
@@ -61,73 +71,62 @@ DIMO: https://mdbenshow-art.github.io/Threads/
 npm install
 ```
 
-安裝 Python 操作 Excel 的必要套件：
+如果未安裝 Python 虛擬環境或 openpyxl，可使用本機虛擬環境安裝必要套件：
 ```bash
-pip install openpyxl
+.venv\Scripts\pip install -r requirements.txt
 ```
+*(或直接 `pip install openpyxl`)*
 
-### 2. 啟動伺服器
+### 2. 本地開發伺服器（非必要）
 
-執行以下命令啟動本地後端伺服器（預設運行在 `http://localhost:3000`）：
+如果您想要使用動態的 Web 互動爬取介面，可以啟動後端 Express 伺服器：
 ```bash
 npm start
 ```
-
-打開瀏覽器訪問 `http://localhost:3000` 即可開始使用 Web 介面！
-
----
-
-## 📝 使用說明
-
-### A. 網頁爬取與即時分析
-1. 在網頁上方的輸入框中，輸入 Threads 的**帳號名稱**（如：`abc89151207`）或**特定貼文網址**。
-2. 點擊 **開始爬取**，系統將自動啟動 Playwright 執行背景爬取，並透過骨架屏展示載入狀態。
-3. 爬取完成後，您可以透過介面上的搜尋框過濾關鍵字，或使用排序功能按讚數、回覆數篩選精華留言。
-
-### B. 追加寫入 Excel 匯入進度
-系統在執行爬取單篇討論串時，會產生最新的數據，並可呼叫後端 Python 腳本將新留言追加至 `水果市場評論貼文_匯入進度.xlsx` 中。
-* **注意**：在執行寫入動作前，請確保您的 **Microsoft Excel 已關閉該檔案**，以免因系統檔案鎖定導致寫入權限出錯。
+打開瀏覽器訪問 `http://localhost:3000` 即可使用動態爬取介面。
 
 ---
 
-## 🔄 每日自動排程爬蟲 (Daily Scheduled Sync)
+## 🔄 數據更新說明
 
-專案包含排程腳本 `daily_sync.js` 與 `run_daily.bat`，可透過 **Windows 工作排程器 (Task Scheduler)** 實現每日早上 6:00 自動執行爬蟲。
+我們提供了兩種方式來保持您的數據為最新狀態：
 
-### 1. 工作原理
-- **自動排程** 每日 6:00 AM 啟動。
-- 透過 [daily_sync.js](file:///c:/Users/User/Desktop/Threads/daily_sync.js) 自動爬取帳號 `@abc89151207` 的最新 10 篇貼文。
-- 呼叫 [update_excel.py](file:///c:/Users/User/Desktop/Threads/update_excel.py) 解析並自動追加新貼文到 [水果市場評論貼文_匯入進度.xlsx](file:///c:/Users/User/Desktop/Threads/水果市場評論貼文_匯入進度.xlsx)。
-- 自動過濾重複的貼文，並將進度與錯誤記錄寫入 [sync_log.txt](file:///c:/Users/User/Desktop/Threads/sync_log.txt)。
+### A. 手動一鍵更新（最推薦 🚀）
+為了省去繁瑣的指令輸入，我們設計了 **`手動一鍵更新.bat`**：
+1. **重要**：在更新前，請先確保已**關閉**您電腦上的 `水果市場評論貼文_匯入進度.xlsx` 檔案，避免 Excel 鎖定檔案導致無法寫入。
+2. 雙擊執行 [手動一鍵更新.bat](file:///c:/Users/User/Desktop/Threads/手動一鍵更新.bat)。
+3. 程式會自動啟動並依序執行：
+   * 爬取最新 10 篇貼文與所有留言。
+   * 將新貼文排重後追加寫入 Excel。
+   * 自動轉換 Excel 為最新的 JSON 與 HTML 網頁。
+4. 跑完後，直接雙擊打開 [水果市場評論貼文_瀏覽.html](file:///c:/Users/User/Desktop/Threads/水果市場評論貼文_瀏覽.html) 即可查閱最新資料！
 
-### 2. 工作排程器設定指令
-我們已成功在系統中註冊名稱為 `ThreadsDailySync` 的排程工作。以下為常用的管理指令（於 PowerShell 中執行）：
+### B. 每日自動排程 (Daily Scheduled Sync)
+若您的電腦在每日早上 6:00 處於開機且未休眠狀態，可透過 **Windows 工作排程器 (Task Scheduler)** 實現自動更新：
 
-- **手動啟動排程測試**：
-  ```powershell
-  Start-ScheduledTask -TaskName "ThreadsDailySync"
-  ```
-- **查詢排程狀態與下次執行時間**：
-  ```powershell
-  Get-ScheduledTaskInfo -TaskName "ThreadsDailySync"
-  ```
-- **刪除排程工作**：
-  ```powershell
-  Unregister-ScheduledTask -TaskName "ThreadsDailySync" -Confirm:$false
-  ```
+- **自動排程工作原理**：
+  - 透過 `run_daily.bat` 每日早上 6:00 啟動，自動爬取帳號 `@abc89151207` 的最新貼文。
+  - 自動寫入 Excel、更新網頁與 JSON 檔案，日誌將輸出至 `sync_log.txt`。
+
+- **工作排程器設定指令（於 PowerShell 中執行）**：
+  - **手動啟動排程測試**：
+    ```powershell
+    Start-ScheduledTask -TaskName "ThreadsDailySync"
+    ```
+  - **查詢排程狀態與下次執行時間**：
+    ```powershell
+    Get-ScheduledTaskInfo -TaskName "ThreadsDailySync"
+    ```
+  - **刪除排程工作**：
+    ```powershell
+    Unregister-ScheduledTask -TaskName "ThreadsDailySync" -Confirm:$false
+    ```
 
 ---
 
-## 💾 3. Excel 轉 JSON 與靜態網頁瀏覽工具
+## 💾 靜態網頁瀏覽工具
 
-如果您想將爬蟲同步進來的 Excel 檔案轉換為實體 JSON 數據並在離線網頁中瀏覽，專案提供了一個獨立的 Python 腳本 [excel_to_json_converter.py](file:///c:/Users/User/Desktop/Threads/excel_to_json_converter.py)。
+專案內含完全獨立的離線網頁，不需運行後端伺服器即可直接開啟：
 
-### A. 使用方法
-在專案根目錄下，開啟終端機/PowerShell 執行：
-```powershell
-python excel_to_json_converter.py
-```
-
-### B. 輸出產物
-1. **[水果市場評論貼文_匯入進度.json](file:///c:/Users/User/Desktop/Threads/水果市場評論貼文_匯入進度.json)**：Excel 欄位轉換後的純 JSON 陣列檔案。
-2. **[水果市場評論貼文_瀏覽.html](file:///c:/Users/User/Desktop/Threads/水果市場評論貼文_瀏覽.html)**：完全獨立的靜態網頁。您可以**直接雙擊開啟它**，不需運行後端伺服器，即可在瀏覽器中讀取該 JSON 數據，並進行即時關鍵字搜尋、日期排序與段落折疊展開。
+1. **[水果市場評論貼文_瀏覽.html](file:///c:/Users/User/Desktop/Threads/水果市場評論貼文_瀏覽.html)**：本地的卡片式數據瀏覽網頁。您可**直接雙擊開啟它**，進行即時搜尋、篩選與段落折疊。
+2. **[index.html](file:///c:/Users/User/Desktop/Threads/index.html)**：與上述網頁完全同步，可直接推送至 GitHub 開啟 **GitHub Pages** 服務，將其發佈為線上公開網頁。

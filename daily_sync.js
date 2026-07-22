@@ -274,7 +274,21 @@ function logMessage(message, isError = false) {
     }
     
     logMessage(`Python stdout:\n${stdout}`);
-    logMessage(`=== SYNC COMPLETED SUCCESSFULLY ===\n`);
-    process.exit(0);
+    
+    // 5. Invoke Python script to convert Excel to JSON and HTML
+    const convertCmd = `"${path.join(__dirname, '.venv', 'Scripts', 'python')}" "${path.join(__dirname, 'excel_to_json_converter.py')}"`;
+    logMessage(`Invoking Python Excel-to-JSON & HTML converter...`);
+    
+    exec(convertCmd, (convError, convStdout, convStderr) => {
+      if (convError) {
+        logMessage(`Converter script execution error (Code: ${convError.code}):\n${convStderr || convError.message}`, true);
+        logMessage(`=== SYNC PARTIALLY COMPLETED (Excel updated, HTML update failed) ===\n`);
+        process.exit(1);
+      }
+      
+      logMessage(`Converter stdout:\n${convStdout}`);
+      logMessage(`=== SYNC COMPLETED SUCCESSFULLY (Excel & HTML updated) ===\n`);
+      process.exit(0);
+    });
   });
 })();
