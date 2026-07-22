@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>蔬菜批發找莎拉 - Threads 數據觀測台</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Unified style from public/style.css adapted for Sarah (Emerald accent) -->
+    <style>
+        :root {
+            --bg-color: #0b0d0f;
+            --card-bg: rgba(20, 26, 33, 0.65);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --accent: #10b981;
+            --accent-glow: rgba(16, 185, 129, 0.25);
+            --accent-hover: #34d399;
+            --success: #10b981;
+            --error: #f43f5e;
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --sidebar-width: 320px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            line-height: 1.6;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.04) 0px, transparent 50%);
+            background-attachment: fixed;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+
+        /* Header */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding-bottom: 24px;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo-icon-container {
+            position: relative;
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent), #3b82f6);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .logo-icon {
+            color: #fff;
+            width: 24px;
+            height: 24px;
+        }
+
+        .title-group h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #fff, #a7f3d0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .title-group p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 4px;
+        }
+
+        /* Action Panel */
+        .action-panel {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .last-update-box {
+            text-align: right;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .last-update-time {
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .btn-update {
+            background: linear-gradient(135deg, var(--accent), #059669);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px var(--accent-glow);
+        }
+
+        .btn-update:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+            background: linear-gradient(135deg, var(--accent-hover), var(--accent));
+        }
+
+        .btn-update:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        .btn-update:disabled {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-muted);
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        /* Main Content Grid */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 28px;
+            align-items: start;
+        }
+
+        @media (max-width: 900px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Sidebar Glass Card */
+        .glass-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .profile-card {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .avatar-container {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(16, 185, 129, 0.2);
+            border: 2px solid var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            color: var(--accent);
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .user-titles h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .user-titles p {
+            color: var(--accent);
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .profile-bio {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 16px;
+        }
+
+        .system-info {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-secondary);
+        }
+
+        .info-row span:last-child {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        /* Search and Filter Panel */
+        .filter-panel {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .search-group {
+            flex: 1;
+            position: relative;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            width: 18px;
+            height: 18px;
+        }
+
+        .search-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 12px 16px 12px 42px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .select-sort {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 12px 16px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        /* Logs Console */
+        .console-log {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(16, 185, 129, 0.15);
+            border-radius: 12px;
+            padding: 16px;
+            font-family: 'Consolas', 'Courier New', Courier, monospace;
+            font-size: 0.8rem;
+            color: #34d399;
+            max-height: 250px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            display: none;
+        }
+
+        .console-log.active {
+            display: block;
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            margin-bottom: 8px;
+            border-bottom: 1px solid rgba(16, 185, 129, 0.15);
+            padding-bottom: 4px;
+        }
+
+        /* Feed List */
+        .feed-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .post-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .post-card:hover {
+            border-color: rgba(16, 185, 129, 0.3);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .card-meta-left {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .badge-user {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            color: var(--success);
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 6px;
+            width: fit-content;
+        }
+
+        .card-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #fff;
+            margin-top: 4px;
+        }
+
+        .card-date {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .post-text {
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .expand-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: var(--text-secondary);
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            width: fit-content;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .expand-btn:hover {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .full-content-box {
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px dashed rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 18px;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            margin-top: 4px;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .empty-feed {
+            text-align: center;
+            padding: 60px 40px;
+            color: var(--text-muted);
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+            color: var(--text-muted);
+            opacity: 0.5;
+        }
+
+        /* Skeleton Screen */
+        .skeleton-card {
+            min-height: 180px;
+            animation: pulse 1.5s infinite ease-in-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .skeleton-line {
+            height: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            margin-bottom: 12px;
+        }
+
+        .skeleton-line.short { width: 40%; }
+        .skeleton-line.medium { width: 70%; }
+        .skeleton-line.long { width: 100%; }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 0.3; }
+            100% { opacity: 0.6; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo-area">
+                <div class="logo-icon-container">
+                    <i data-lucide="leaf" class="logo-icon"></i>
+                </div>
+                <div class="title-group">
+                    <h1>蔬菜批發找莎拉</h1>
+                    <p>Threads 數據觀察與數據自動備份平台</p>
+                </div>
+            </div>
+            <div class="action-panel">
+                <div class="last-update-box">
+                    <div>資料更新狀態：<span id="sync-status">待載入...</span></div>
+                    <div>最後同步時間：<span id="last-update" class="last-update-time">-</span></div>
+                </div>
+                <button id="btn-sync" class="btn-update">
+                    <i data-lucide="refresh-cw"></i>
+                    <span>一鍵更新資料</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Layout -->
+        <div class="main-layout">
+            
+            <!-- Sidebar -->
+            <aside class="profile-card glass-card">
+                <div class="profile-header">
+                    <div class="avatar-container">莎</div>
+                    <div class="user-titles">
+                        <h2>蔬菜批發找莎拉</h2>
+                        <p>@water.mekelong</p>
+                    </div>
+                </div>
+                <p class="profile-bio">
+                    批發蔬菜產銷數據、農作情報監測。資料自動匯入並保存於本機桌面資料夾。
+                </p>
+                
+                <div class="system-info">
+                    <div class="info-row">
+                        <span>排程模式</span>
+                        <span style="color: var(--accent);">每日 06:00 AM</span>
+                    </div>
+                    <div class="info-row">
+                        <span>本機儲存</span>
+                        <span>桌面/water.mekelong...</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Excel 輸出</span>
+                        <span style="color: var(--error);">未啟用 (純 JSON)</span>
+                    </div>
+                </div>
+                
+                <!-- Inner Console logs -->
+                <div id="log-section" class="console-log">
+                    <div class="console-header">
+                        <span>爬蟲背景執行日誌</span>
+                        <span id="log-status">IDLE</span>
+                    </div>
+                    <div id="log-output">正在等待爬蟲指令...</div>
+                </div>
+            </aside>
+
+            <!-- Main Feed -->
+            <main style="display: flex; flex-direction: column; gap: 16px;">
+                
+                <!-- Controls -->
+                <div class="filter-panel">
+                    <div class="search-group">
+                        <i data-lucide="search" class="search-icon"></i>
+                        <input type="text" id="search-input" class="search-input" placeholder="搜尋標題、貼文內容或發布日期...">
+                    </div>
+                    <select id="sort-select" class="select-sort">
+                        <option value="newest">時間排序: 最新優先</option>
+                        <option value="oldest">時間排序: 最舊優先</option>
+                        <option value="title">標題字典排序</option>
+                    </select>
+                </div>
+
+                <!-- Feed list -->
+                <div id="feed" class="feed-container">
+                    <!-- Skeletons initially -->
+                    <div class="post-card skeleton-card">
+                        <div class="skeleton-line short"></div>
+                        <div class="skeleton-line long"></div>
+                        <div class="skeleton-line medium"></div>
+                    </div>
+                    <div class="post-card skeleton-card">
+                        <div class="skeleton-line short"></div>
+                        <div class="skeleton-line long"></div>
+                        <div class="skeleton-line medium"></div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Frontend logic script -->
+    <script src="sarah.js"></script>
+</body>
+</html>

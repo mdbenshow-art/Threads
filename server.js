@@ -120,6 +120,75 @@ app.get('/api/sync-excel', async (req, res) => {
   });
 });
 
+// Sarah (@water.mekelong) API - Read current posts
+app.get('/api/sarah/posts', (req, res) => {
+  const destDir = path.join(process.env.USERPROFILE || 'C:\\Users\\User', 'Desktop', 'water.mekelong-水果生鮮資料夾');
+  const postsJsonPath = path.join(destDir, 'water.mekelong_posts.json');
+  let posts = [];
+  let lastUpdated = null;
+  
+  if (fs.existsSync(postsJsonPath)) {
+    try {
+      const fileContent = fs.readFileSync(postsJsonPath, 'utf8');
+      posts = JSON.parse(fileContent);
+      const stats = fs.statSync(postsJsonPath);
+      lastUpdated = stats.mtime.toLocaleString('zh-TW');
+    } catch (err) {
+      console.error('[Sarah Posts API Error]', err.message);
+    }
+  }
+  
+  res.json({
+    success: true,
+    posts,
+    lastUpdated
+  });
+});
+
+// Sarah (@water.mekelong) API - Run sync scraper
+app.get('/api/sarah/sync', (req, res) => {
+  console.log(`[Sarah Sync Request] Triggered sync for @water.mekelong...`);
+  
+  const destDir = path.join(process.env.USERPROFILE || 'C:\\Users\\User', 'Desktop', 'water.mekelong-水果生鮮資料夾');
+  const syncScript = `node "${path.join(__dirname, 'daily_sync_sarah.js')}"`;
+  
+  exec(syncScript, (error, stdout, stderr) => {
+    const logFilePath = path.join(destDir, 'sarah_sync_log.txt');
+    let logContent = '';
+    if (fs.existsSync(logFilePath)) {
+      logContent = fs.readFileSync(logFilePath, 'utf8').split('\n').slice(-30).join('\n');
+    }
+
+    if (error) {
+      console.error(`[Sarah Sync Error]`, stderr || error.message);
+      return res.status(500).json({
+        success: false,
+        error: error.message,
+        stderr: stderr,
+        stdout: stdout,
+        logs: logContent
+      });
+    }
+
+    let addedCount = 0;
+    let skippedCount = 0;
+    const addedMatches = stdout.match(/Added new post:/g);
+    if (addedMatches) addedCount = addedMatches.length;
+
+    const skippedMatches = stdout.match(/Skipping duplicate post:/g);
+    if (skippedMatches) skippedCount = skippedMatches.length;
+
+    console.log(`[Sarah Sync Success] Added: ${addedCount}, Skipped: ${skippedCount}`);
+    return res.json({
+      success: true,
+      addedCount,
+      skippedCount,
+      stdout,
+      logs: logContent
+    });
+  });
+});
+
 // Scrape API
 app.get('/api/scrape', async (req, res) => {
   let { username } = req.query;
